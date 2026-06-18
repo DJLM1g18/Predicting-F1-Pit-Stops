@@ -3,52 +3,48 @@ We worked with a synthetically generated, telemetry‑style F1 dataset to predic
 
 # Dependencies
 
-If you wish to view this report without downloading the notebook and running code, you can download `analysis.html`, which is an export of the notebook file.
+To view the report without running code, download `analysis.html`.
 
-If you wish to run the notebook, you'll need the following packages:
+To run the notebook, install:
 1. Matplotlib.
 2. Numpy.
 3. Pandas.
 4. `shap`.
 5. `sklearn` (scikit learn).
-6. `XGBoost`.
+6. `xgboost`.
 
 # Issues with the data
 
-In this section, we noted several oddities about the data. This included:;
-1. Double pitting events were unusually high ($\approx 25\%$ of the data). F1 drivers rarely pit two laps in a row.
-2. High pitting base rates: $\approx 14\%$ of the samples provided were pit laps; $\approx 20\%$ of the samples provided preceeded a pit stop. This is much higher than rates of pitting for actual F1 drivers.
-3. `Stint` should increase monotonically with `LapNumber` for a given race, since the stint of the tyres can only go up as the race goes on. This isn't true over a non-negligable portion of the data.
-4. The features `LapTime_Delta` and `Position_Change` do not behave as expected; we'd expect `LapTime_Delta` to be the simple arithmetic difference of two consecutive lap times. Similarly, we'd expect `Position_Change` to be the simple arithmetic different of consecutive `Position` values. This doesn't seem to be the case.
-5. Massive driver numbers per race: one race has only 4 drivers, while another has 856. This is far outside the usual 20 driver count.
-6. The number of samples are orders of magnitude higher than what is physically possible.
-7. Missing features: features that would be very important for making pit stop decisions, such as those related to the weather, or safety car information, are not included.
-
-Overall, it must be the case that the data is synthetic.
+Several domain‑violating inconsistencies show the dataset is synthetic:
+1. Double pitting occurs in $\approx 25\%$ of pit laps (physically unrealistic).
+2. Base pit rates are far too high ($\approx 14\%$ pit laps, $\approx 20\%$ laps preceeding a pit stop).
+3. `Stint` numbers decrease in a non-trivial portion of laps (impossible).
+4. The features `LapTime_Delta` and `Position_Change` do not match their definitions.
+5. Driver counts per race range from 4 to 856 (real F1 has 20).
+6. Sample size is orders of magnitude above what is physically possible.
+7. Missing key features (weather, safety car, gaps to other cars).
 
 # Linear modelling
 
-We trained a baseline linear model (logisitic regression). The data contains high cardinality categorical features, and to deal with these we tested two different feature engineering choices for those columns:
-1. One-hot encoding.
-2. Feature aggregation, where we compress categorical columns into a numerical summary statistic.
+We trained a baseline linear model (logisitic regression) using two feature engineering strategies:
+1. One-hot encoding: high-dimensional feature space (928 features); $\approx 60\%$ recall, $\approx 60\%$ precision, and $\approx 85\%$ accuracy.
+2. Feature aggregation: similar recall ($\approx 60\%$), but lower precision ($\approx 44\%$); $\approx 77\%$ accuracy.
 
-Label encoding was **not** used for the baseline linear model, as the resultant artificial ordinal structure is not well tolerated by linear models. We also used a `StandardScaler` for numerical columns, so that no single feature dominates gradient updates simply because they have higher magnitude (it also makes the learned weightings roughly comparable). We found:
-
-1. One-hot encoding produced a high-dimensionality feature space (928), but had non-trivial performance metrics after choosing a suitable threshold: $\approx 60\%$ recall, $\approx 60\%$ precision, and accuracy $\approx 85\%$.
-2. Aggregating `Race`, `Year`, `Driver` and `Compound` into a mean / median / minimum / maximum lap time summary statistic performed markedly worse: $\approx 60\%$ recall, but $\approx 44\%$ precision, and accuracy $77\%$.
-
-It should be noted that, due to class imbalance, accuracy is not a particularly insightful metric for model performance in isolation.
-
-We analysed the weightings learned by this model, explaining how they affect the models output. We also gave a small number of possible domain-specific interpretations of the learned weightings.
+Due to class imbalance, accuracy is not a particularly insightful metric in isolation.
+We analysed the learned weightings for the model, and gave some possible interpretations.
 
 # Tree modelling
 
-We also trained a tree-based ensemble (XGBoost). This immediately gave a boost to our performance metrics: $\approx 72\%$ recall, $\approx 75\%$ precision, and $\approx 90\%$ accuracy. In order to analyse the model's behaviour, we used shap. We:
-1. Observed the mean absolute shap values across a set of samples to get a measure of feature importance. We noted that `PitStop` (which measures whether a driver pitted in the current lap) had a low global mean absolute shap; but conditionally, when `PitStop==1`, had much higher mean absolute shap.
-2. Plotted a *Beeswarm* plot. This allowed us to observe how different features across a set of samples influenced the models decisions. We noted similarities with the linear model, but also some novel trends.
+We also trained a tree-based ensemble (XGBoost). This gave better performance:
+- $\approx 72\%$ recall,
+- $\approx 75\%$ precision,
+- $\approx 90\%$ accuracy.
 
-Overall, it seems likely that the data contains non-linear feature interactions that the tree model was able to exploit.
+Shap analysis showed:
+
+1. Global feature importance differed from conditional importance (e.g., `PitStop` becomes influential when `PitStop==1`).
+2. *Beeswarm* plots showed some similar trends to the linear model; but also non-linear interactions not capured by logistic regression.
 
 # Tree error analysis
 
-We did a simple first-order error analysis for a given test set. We used *lift* to test whether or not failures appeared to be uniformly distributed across the test set, or were concentrated in certain feature regimes. We computed $99\%$ empirical null intervals and compared the pointwise lift value to these ranges, and consistently found lift values outside the null intervals across different features.
+A simple first-order error analysis using **lift** values showed that the model failures were not uniformly distributed across the test set. Lift values consistently fell outisde $99\%$ empirical null intervals, indicating concentrated error regions.
