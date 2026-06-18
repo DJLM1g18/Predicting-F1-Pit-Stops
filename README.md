@@ -16,8 +16,8 @@ To run the notebook, install:
 # Issues with the data
 
 Several domain‑violating inconsistencies show the dataset is synthetic:
-1. Double pitting occurs in $\approx 25%$ of pit laps (physically unrealistic).
-2. Base pit rates are far too high ($\approx 14%$ pit laps, $\approx 20%$ laps preceeding a pit stop).
+1. Double pitting occurs in ~25% of pit laps (physically unrealistic).
+2. Base pit rates are far too high (~14% pit laps, ~20% laps preceeding a pit stop).
 3. `Stint` numbers decrease in a non-trivial portion of laps (impossible).
 4. The features `LapTime_Delta` and `Position_Change` do not match their definitions.
 5. Driver counts per race range from 4 to 856 (real F1 has 20).
@@ -27,8 +27,8 @@ Several domain‑violating inconsistencies show the dataset is synthetic:
 # Linear modelling
 
 We trained a baseline linear model (logisitic regression) using two feature engineering strategies:
-1. One-hot encoding: high-dimensional feature space (928 features); $\approx 60%$ recall, $\approx 60%$ precision, and $\approx 85%$ accuracy.
-2. Feature aggregation: similar recall ($\approx 60%$), but lower precision ($\approx 44%$); $\approx 77%$ accuracy.
+1. One-hot encoding: high-dimensional feature space (928 features); ~60% recall, ~60% precision, and ~85% accuracy.
+2. Feature aggregation: similar recall (~60%), but lower precision (~44%); ~77% accuracy.
 
 Due to class imbalance, accuracy is not a particularly insightful metric in isolation.
 We analysed the learned weightings for the model, and gave some possible interpretations.
@@ -36,9 +36,9 @@ We analysed the learned weightings for the model, and gave some possible interpr
 # Tree modelling
 
 We also trained a tree-based ensemble (XGBoost). This gave better performance:
-- $\approx 72%$ recall,
-- $\approx 75%$ precision,
-- $\approx 90%$ accuracy.
+- ~72% recall,
+- ~75% precision,
+- ~90% accuracy.
 
 Shap analysis showed:
 
@@ -47,4 +47,4 @@ Shap analysis showed:
 
 # Tree error analysis
 
-A simple first-order error analysis using **lift** values showed that the model failures were not uniformly distributed across the test set. Lift values consistently fell outisde $99%$ empirical null intervals, indicating concentrated error regions.
+A simple first-order error analysis using **lift** values showed that the model failures were not uniformly distributed across the test set. Lift values consistently fell outisde 99% empirical null intervals, indicating concentrated error regions.
