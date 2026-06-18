@@ -44,4 +44,11 @@ We analysed the weightings learned by this model, explaining how they affect the
 # Tree modelling
 
 We also trained a tree-based ensemble (XGBoost). This immediately gave a boost to our performance metrics: $\approx 72\%$ recall, $\approx 75\%$ precision, and $\approx 90\%$ accuracy. In order to analyse the model's behaviour, we used shap. We:
-1. 
+1. Observed the mean absolute shap values across a set of samples to get a measure of feature importance. We noted that `PitStop` (which measures whether a driver pitted in the current lap) had a low global mean absolute shap; but conditionally, when `PitStop==1`, had much higher mean absolute shap.
+2. Plotted a *Beeswarm* plot. This allowed us to observe how different features across a set of samples influenced the models decisions. We noted similarities with the linear model, but also some novel trends.
+
+Overall, it seems likely that the data contains non-linear feature interactions that the tree model was able to exploit.
+
+# Tree error analysis
+
+We did a simple first-order error analysis for a given test set. We used *lift* to test whether or not failures appeared to be uniformly distributed across the test set, or were concentrated in certain feature regimes. We computed $99\%$ empirical null intervals and compared the pointwise lift value to these ranges, and consistently found lift values outside the null intervals across different features.
