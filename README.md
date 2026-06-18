@@ -11,6 +11,7 @@ If you wish to run the notebook, you'll need the following packages:
 3. Pandas.
 4. `shap`.
 5. `sklearn` (scikit learn).
+6. `XGBoost`.
 
 # Issues with the data
 
