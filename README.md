@@ -17,7 +17,7 @@ If you wish to run the notebook, you'll need the following packages:
 In this section, we noted several oddities about the data. This included:;
 1. Double pitting events were unusually high ($\approx 25\%$ of the data). F1 drivers rarely pit two laps in a row.
 2. High pitting base rates: $\approx 14\%$ of the samples provided were pit laps; $\approx 20\%$ of the samples provided preceeded a pit stop. This is much higher than rates of pitting for actual F1 drivers.
-3. `Stint` should increase monotonically with `LapNumber` for a given race. This isn't true over a non-negligable portion of the data.
+3. `Stint` should increase monotonically with `LapNumber` for a given race, since the stint of the tyres can only go up as the race goes on. This isn't true over a non-negligable portion of the data.
 4. The features `LapTime_Delta` and `Position_Change` do not behave as expected; we'd expect `LapTime_Delta` to be the simple arithmetic difference of two consecutive lap times. Similarly, we'd expect `Position_Change` to be the simple arithmetic different of consecutive `Position` values. This doesn't seem to be the case.
 5. Massive driver numbers per race: one race has only 4 drivers, while another has 856. This is far outside the usual 20 driver count.
 6. The number of samples are orders of magnitude higher than what is physically possible.
@@ -25,3 +25,22 @@ In this section, we noted several oddities about the data. This included:;
 
 Overall, it must be the case that the data is synthetic.
 
+# Linear modelling
+
+We trained a baseline linear model (logisitic regression). The data contains high cardinality categorical features, and to deal with these we tested two different feature engineering choices for those columns:
+1. One-hot encoding.
+2. Feature aggregation, where we compress categorical columns into a numerical summary statistic.
+
+Label encoding was **not** used for the baseline linear model, as the resultant artificial ordinal structure is not well tolerated by linear models. We also used a `StandardScaler` for numerical columns, so that no single feature dominates gradient updates simply because they have higher magnitude (it also makes the learned weightings roughly comparable). We found:
+
+1. One-hot encoding produced a high-dimensionality feature space (928), but had non-trivial performance metrics after choosing a suitable threshold: $\approx 60\%$ recall, $\approx 60\%$ precision, and accuracy $\approx 85\%$.
+2. Aggregating `Race`, `Year`, `Driver` and `Compound` into a mean / median / minimum / maximum lap time summary statistic performed markedly worse: $\approx 60\%$ recall, but $\approx 44\%$ precision, and accuracy $77\%$.
+
+It should be noted that, due to class imbalance, accuracy is not a particularly insightful metric for model performance in isolation.
+
+We analysed the weightings learned by this model, explaining how they affect the models output. We also gave a small number of possible domain-specific interpretations of the learned weightings.
+
+# Tree modelling
+
+We also trained a tree-based ensemble (XGBoost). This immediately gave a boost to our performance metrics: $\approx 72\%$ recall, $\approx 75\%$ precision, and $\approx 90\%$ accuracy. In order to analyse the model's behaviour, we used shap. We:
+1. 
